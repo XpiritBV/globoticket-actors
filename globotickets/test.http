@@ -1,0 +1,7 @@
+# do a "get" to buy 5 ticket s
+GET https://localhost:7042/buyTicket?concertid=xpirit2&quantity=5
+
+###
+# do a "get" to initialize a concert
+GET https://localhost:7042/beginticketsale?concertId=xpirit2
+

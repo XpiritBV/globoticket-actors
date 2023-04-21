@@ -1,2 +1,2 @@
-
-[GenerateSerializer, Immutable] public record Order(int TicketCount = 0);
+[GenerateSerializer, Immutable] 
+public record Order(int TicketCount = 0);

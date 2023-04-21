@@ -1,4 +1,6 @@
+using Orleans.Core.Internal;
 using Orleans.Hosting;
+using Orleans.Runtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,16 +8,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHostedService<ConcertWatcher>();
 
 builder.Host.UseOrleans(
     builder => builder
         .UseLocalhostClustering()
-        .AddMemoryGrainStorageAsDefault()
-        .UseDashboard()
-    );
-
-
-
+        .AddAzureTableGrainStorage(
+            name: "concerts",
+            configureOptions: options =>
+            {
+                options.ConfigureTableServiceClient(
+                    "UseDevelopmentStorage=true");
+                //                    "DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==");
+            })
+        .UseDashboard(options => { })
+    ) ;
 
 var app = builder.Build();
 
@@ -28,30 +35,28 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+app.MapGet("/beginticketsale", (IGrainFactory factory, string concertId) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    var concert = factory.GetGrain<IConcertGrain>(concertId);
+    concert.BeginTicketSale(100);
 })
-.WithName("GetWeatherForecast")
+.WithName("BeginTicketSale").WithOpenApi();
+
+app.MapGet("/buyTicket", async (IGrainFactory factory, int quantity, string concertId) =>
+{
+    var concert = factory.GetGrain<IConcertGrain>(concertId);
+    await concert.BuyTicket(quantity);
+})
+.WithName("BuyTicket")
 .WithOpenApi();
 
-app.Run();
+// app.MapGet("/concerts", async (IGrainFactory factory) =>
+// {
+//     var concerts = factory.GetGrain<IGrainObserver>();
+    
+// })
+// .WithName("Concerts")
+// .WithOpenApi();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+app.Run();
 
