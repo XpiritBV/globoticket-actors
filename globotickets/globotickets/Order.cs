@@ -1,4 +1,2 @@
-public class Order
-{
-    public int TicketCount { get; set; } = 0; 
-}
+
+[GenerateSerializer, Immutable] public record Order(int TicketCount = 0);

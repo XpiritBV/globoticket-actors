@@ -1,26 +1,47 @@
+using Orleans.Runtime;
+
 public interface IConcertGrain : IGrainWithGuidKey
 {
     Task<Order> BuyTicket(int quantity);
-    Task SetAmountofTickets(int amount);
+    Task BeginTicketSale(int ticketAmount);
+    Task GetAvailableTicketAmount();
 }
 
-public class ConcertGrain: Grain, IGrainWithGuidKey{
+public class ConcertGrain : Grain, IConcertGrain
+{
 
-    private int _availableTickets;
+    private readonly IPersistentState<ConcertState> _concert;
 
-    public Task<Order> BuyTicket(int quantity)
+    public ConcertGrain(
+        [PersistentState(
+            stateName: nameof(ConcertState),
+            storageName: "concerts")]
+        IPersistentState<ConcertState> concertState)
     {
-        return Task.FromResult(new Order());
+        _concert = concertState;
     }
 
-    public Task SetAmountofTickets(int amount)
+    public async Task<Order> BuyTicket(int quantity)
     {
-        _availableTickets = amount;
+        _concert.State = _concert.State with { AvailableTickets = _concert.State.AvailableTickets - quantity };
+        await _concert.WriteStateAsync();
+        return new Order(quantity);
+    }
+
+    public async Task BeginTicketSale(int amount)
+    {
+        _concert.State.AvailableTickets = amount;
+        await _concert.WriteStateAsync();
+    }
+
+    public Task GetAvailableTicketAmount()
+    {
+        return Task.FromResult(_concert.State.AvailableTickets);
     }
 }
 
 [GenerateSerializer, Immutable]
-public class ConcertState
+public sealed record ConcertState
 {
     public int AvailableTickets { get; set; }
 }
