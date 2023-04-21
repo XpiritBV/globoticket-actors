@@ -50,13 +50,5 @@ app.MapGet("/buyTicket", async (IGrainFactory factory, int quantity, string conc
 .WithName("BuyTicket")
 .WithOpenApi();
 
-// app.MapGet("/concerts", async (IGrainFactory factory) =>
-// {
-//     var concerts = factory.GetGrain<IGrainObserver>();
-    
-// })
-// .WithName("Concerts")
-// .WithOpenApi();
-
 app.Run();
 

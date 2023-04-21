@@ -18,7 +18,6 @@ public class ConcertWatcher : BackgroundService, IConcertWatcher
 
     protected override  Task ExecuteAsync(CancellationToken stoppingToken)
     {
-
         Task.Run(async () =>
         {
             if (!stoppingToken.IsCancellationRequested)
@@ -35,6 +34,5 @@ public class ConcertWatcher : BackgroundService, IConcertWatcher
         }, stoppingToken);
 
         return Task.CompletedTask;
-        
     }
 }
